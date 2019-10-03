@@ -1,12 +1,17 @@
 #!/usr/bin/env python
-import semver as package
+
 from glob import glob
 from os import remove
 from os.path import dirname, join
-from setuptools import setup
+from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
 from shlex import split
 from shutil import rmtree
+import sys
+
+sys.path.insert(0, "src")
+
+import semver as package  # noqa: F402
 
 
 class Tox(TestCommand):
@@ -74,12 +79,14 @@ setup(
     name=package.__name__,
     version=package.__version__,
     description=package.__doc__.strip(),
+    keywords="version",
     long_description=read_file('README.rst'),
     author=package.__author__,
     author_email=package.__author_email__,
     url='https://github.com/k-bx/python-semver',
     download_url='https://github.com/k-bx/python-semver/downloads',
-    py_modules=[package.__name__],
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     include_package_data=True,
     license='BSD',
     classifiers=[
@@ -97,7 +104,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    tests_require=['tox', 'virtualenv'],
+    tests_require=['tox', 'pytest', 'virtualenv'],
     cmdclass={
         'clean': Clean,
         'test': Tox,
