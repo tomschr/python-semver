@@ -1,5 +1,5 @@
 #
-#
+# This file is part of the semver module
 #
 
 from .utils import format_version, _REGEX, _compare_by_keys

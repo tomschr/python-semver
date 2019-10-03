@@ -1,5 +1,5 @@
 #
-#
+# This file is part of the semver module
 #
 
 import re
