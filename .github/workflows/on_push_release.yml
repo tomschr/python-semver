@@ -30,7 +30,7 @@ jobs:
       - name: Verify release branch with semver version
         run: |
           echo "PWD=$PWD"
-          python3 .github/workflow/verify-version.py
+          python3 .github/workflows/verify-version.py
 
 #          SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
 #          RELEASE="${GITHUB_REF#*/release/}"
