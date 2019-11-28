@@ -36,15 +36,32 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Install dependencies
+      - name: Get semver version
+        needs: setup-py37
+        id: get-semver-version
+        env:
+          PATH: .:src/
+        run: |
+          python3 setup.py develop --user
+          echo "::set-output name=version::$(python3 -c 'import semver; print(semver.__version__, end="")')"
+
+      - name: Verify release branch with semver version
+        needs: get-semver-version
+        run: |
+          SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
+          RELEASE="${GITHUB_REF#*/release/}"
+          if [[ $RELEASE != $SEMVER_VERSION ]]; then
+            echo "::error::The semver version and the branch differ"
+          fi
+
+      - name: Install wheel dependencies
         id: install-wheel
         run: |
-          python -m pip install --upgrade pip wheel
+          python3 -m pip install --upgrade pip wheel
 
       - name: Build wheel
         id: wheel
+        needs: install-wheel
         run: |
-            python3 setup.py bdist_wheel
-            echo "GITHUB_REF=$GITHUB_REF"
-            echo "RELEASE=$RELEASE"
-            "${GITHUB_REF#*/release/}"
+          python3 setup.py bdist_wheel
+          echo "GITHUB_REF=$GITHUB_REF"
