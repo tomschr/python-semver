@@ -71,7 +71,6 @@ jobs:
         with:
           python-version: 3.7
 
-
       - name: Install wheel dependencies
         id: install-wheel
         run: |
@@ -82,3 +81,11 @@ jobs:
         run: |
           python3 setup.py bdist_wheel
           echo "GITHUB_REF=$GITHUB_REF"
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        # if: startsWith(github.ref, 'refs/releases/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: dist/*
