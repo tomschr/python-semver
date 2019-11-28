@@ -50,6 +50,9 @@ jobs:
           RELEASE="${GITHUB_REF#*/release/}"
           if [[ $RELEASE != $SEMVER_VERSION ]]; then
             echo "::error::The semver version and the branch differ"
+            echo "::error::Branch is '$RELEASE' and semver contains '$SEMVER_VERSION'"
+          else
+            echo "::debug::semver version and branch are both '$SEMVER_VERSION'"
           fi
 
       - name: Install wheel dependencies
