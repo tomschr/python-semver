@@ -31,19 +31,20 @@ jobs:
            echo "::debug::---end"
 
       - name: Set up Python 3.7
+        id: setup-py37
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
 
       - name: Install dependencies
+        id: install-wheel
         run: |
           python -m pip install --upgrade pip wheel
 
       - name: Build wheel
         id: wheel
-        env:
-          RELEASE: "${GITHUB_REF#*/release/}"
         run: |
             python3 setup.py bdist_wheel
             echo "GITHUB_REF=$GITHUB_REF"
             echo "RELEASE=$RELEASE"
+            "${GITHUB_REF#*/release/}"
