@@ -1,4 +1,4 @@
-name: Creating Release
+name: Preparing Release
 
 on:
   push:
@@ -6,7 +6,34 @@ on:
       - 'release/*'
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get semver version
+        id: get-semver-version
+        env:
+          PATH: .:src/
+        run: |
+          python3 setup.py develop --user
+          echo "::set-output name=version::$(python3 \
+              -c 'import semver; print(semver.__version__, end="")')"
+
+      - name: Verify release branch with semver version
+        run: |
+          SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
+          RELEASE="${GITHUB_REF#*/release/}"
+          if [[ $RELEASE != $SEMVER_VERSION ]]; then
+            echo "::error::The semver version and the branch differ"
+            echo "::error::Branch is '$RELEASE' and \
+                semver contains '$SEMVER_VERSION'"
+            exit 2
+          else
+            echo "::debug::semver version and branch are both '$SEMVER_VERSION'"
+          fi
+
   prepare-release:
+    needs: check-version
     runs-on: ubuntu-latest
 
     steps:
@@ -36,27 +63,6 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Get semver version
-        id: get-semver-version
-        env:
-          PATH: .:src/
-        run: |
-          python3 setup.py develop --user
-          echo "::set-output name=version::$(python3 \
-              -c 'import semver; print(semver.__version__, end="")')"
-
-      - name: Verify release branch with semver version
-        run: |
-          SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
-          RELEASE="${GITHUB_REF#*/release/}"
-          if [[ $RELEASE != $SEMVER_VERSION ]]; then
-            echo "::error::The semver version and the branch differ"
-            echo "::error::Branch is '$RELEASE' and \
-                semver contains '$SEMVER_VERSION'"
-            exit 2
-          else
-            echo "::debug::semver version and branch are both '$SEMVER_VERSION'"
-          fi
 
       - name: Install wheel dependencies
         id: install-wheel
