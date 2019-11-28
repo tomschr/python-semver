@@ -79,7 +79,7 @@ jobs:
       - name: Create tag
         uses: hole19/git-tag-action@master
         env:
-          TAG: ${{ steps.release.output.release }}
+          TAG: ${{ steps.release.outputs.release }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release
@@ -88,4 +88,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: dist/*
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
