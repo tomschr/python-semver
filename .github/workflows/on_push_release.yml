@@ -18,27 +18,29 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Get semver version
-        id: get-semver-version
-        env:
-          PATH: .:src/
-        run: |
-          python3 setup.py develop --user
-          echo "::set-output name=version::$(python3 \
-              -c 'import semver; print(semver.__version__, end="")')"
+#      - name: Get semver version
+#        id: get-semver-version
+#        env:
+#          PATH: .:src/
+#        run: |
+#          python3 setup.py develop --user
+#          echo "::set-output name=version::$(python3 \
+#              -c 'import semver; print(semver.__version__, end="")')"
 
       - name: Verify release branch with semver version
         run: |
-          SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
-          RELEASE="${GITHUB_REF#*/release/}"
-          if [[ $RELEASE != $SEMVER_VERSION ]]; then
-            echo "::error::The semver version and the branch differ"
-            echo "::error::Branch is '$RELEASE' and \
-                semver contains '$SEMVER_VERSION'"
-            exit 2
-          else
-            echo "::debug::semver version and branch are both '$SEMVER_VERSION'"
-          fi
+          python3 .github/workflow/verify-version.py
+
+#          SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
+#          RELEASE="${GITHUB_REF#*/release/}"
+#          if [[ $RELEASE != $SEMVER_VERSION ]]; then
+#            echo "::error::The semver version and the branch differ"
+#            echo "::error::Branch is '$RELEASE' and \
+#                semver contains '$SEMVER_VERSION'"
+#            exit 2
+#           else
+#           echo "::debug::semver version and branch are both '$SEMVER_VERSION'"
+#           fi
 
   prepare-release:
     needs: check-version
@@ -65,6 +67,17 @@ jobs:
            echo "\n"
            echo "::debug::---end"
 
+      - name: Output release
+        id: release
+        run: |
+          RELEASE="${GITHUB_REF#*/release/}"
+          # test the output
+          if [[ -z $RELEASE ]]; then
+             echo "::error::GITHUB_REF created an invalid or empty entry"
+             exit 10
+          fi
+          echo "::set-output name=release::$RELEASE"
+
       - name: Set up Python 3.7
         id: setup-py37
         uses: actions/setup-python@v1
@@ -82,7 +95,13 @@ jobs:
           python3 setup.py bdist_wheel
           echo "GITHUB_REF=$GITHUB_REF"
 
-      - name: Release
+      - name: Create tag
+        uses: hole19/git-tag-action@master
+        env:
+          TAG: ${{ steps.release.output.release }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release
         uses: softprops/action-gh-release@v1
         # if: startsWith(github.ref, 'refs/releases/')
         env:
