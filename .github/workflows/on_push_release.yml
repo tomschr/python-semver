@@ -6,7 +6,7 @@ on:
       - 'release/*'
 
 jobs:
-  build:
+  prepare-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +42,8 @@ jobs:
           PATH: .:src/
         run: |
           python3 setup.py develop --user
-          echo "::set-output name=version::$(python3 -c 'import semver; print(semver.__version__, end="")')"
+          echo "::set-output name=version::$(python3 \
+              -c 'import semver; print(semver.__version__, end="")')"
 
       - name: Verify release branch with semver version
         run: |
@@ -50,7 +51,9 @@ jobs:
           RELEASE="${GITHUB_REF#*/release/}"
           if [[ $RELEASE != $SEMVER_VERSION ]]; then
             echo "::error::The semver version and the branch differ"
-            echo "::error::Branch is '$RELEASE' and semver contains '$SEMVER_VERSION'"
+            echo "::error::Branch is '$RELEASE' and \
+                semver contains '$SEMVER_VERSION'"
+            exit 2
           else
             echo "::debug::semver version and branch are both '$SEMVER_VERSION'"
           fi
