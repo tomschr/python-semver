@@ -34,14 +34,12 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
-        env:
-            RELEASE: "${GITHUB_REF#*/release/}"
-        run: |
-            echo "GITHUB_REF=$GITHUB_REF"
-            echo "RELEASE=$RELEASE"
 
       - name: Build wheel
         id: wheel
-        run: python3 setup.py bdist_wheel
-
-        
+        env:
+          RELEASE: "${GITHUB_REF#*/release/}"
+        run: |
+            python3 setup.py bdist_wheel
+            echo "GITHUB_REF=$GITHUB_REF"
+            echo "RELEASE=$RELEASE"
