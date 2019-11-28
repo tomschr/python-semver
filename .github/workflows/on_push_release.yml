@@ -37,7 +37,6 @@ jobs:
           python-version: 3.7
 
       - name: Get semver version
-        needs: setup-py37
         id: get-semver-version
         env:
           PATH: .:src/
@@ -46,7 +45,6 @@ jobs:
           echo "::set-output name=version::$(python3 -c 'import semver; print(semver.__version__, end="")')"
 
       - name: Verify release branch with semver version
-        needs: get-semver-version
         run: |
           SEMVER_VERSION="${{ steps.get-semver-version.outputs.version }}"
           RELEASE="${GITHUB_REF#*/release/}"
@@ -61,7 +59,6 @@ jobs:
 
       - name: Build wheel
         id: wheel
-        needs: install-wheel
         run: |
           python3 setup.py bdist_wheel
           echo "GITHUB_REF=$GITHUB_REF"
