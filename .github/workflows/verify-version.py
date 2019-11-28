@@ -19,31 +19,35 @@ searchpaths = [".", "src", "source"]
 [sys.path.insert(0, p) for p in reversed(searchpaths)]
 
 import semver
+
 SEMVER = semver.__version__
 
 # Example:
 # GITHUB_REF="refs/heads/release/2.9.1-rc1"
-RELEASE = os.environ.get('GITHUB_REF', '').rsplit("/", 1)[-1]
+RELEASE = os.environ.get("GITHUB_REF", "").rsplit("/", 1)[-1]
 
 
 def verify():
-    print("::debug::pwd={}".format(os.environ["PWD"]))
+    print("::debug::Checking release branch name and semver version...")
 
     if not RELEASE:
-        print("::error::Environment variable GITHUB_REF "
-              "doesn't exist or is empty")
+        print("::error::Environment variable GITHUB_REF " "doesn't exist or is empty")
         return 1
 
-    if SEMVER == RELEASE:
-        print("::debug::Good, semver version and branch are the same")
-        return 0
-    else:
+    if SEMVER != RELEASE:
         print("::error::The semver version and the release branch differ")
-        print(("::error::Release branch is "
-               "{!r}, but semver is {!r}".format(RELEASE, SEMVER)))
-        print("::error::Adapt the version in semver.__version__ to match "
-              "the release branch")
+        print(
+            "::error::Release branch is "
+            "{!r}, but semver is {!r}".format(RELEASE, SEMVER)
+        )
+        print(
+            "::error::Adapt the version in semver.__version__ to match "
+            "the release branch"
+        )
         return 2
+
+    print("::debug::All good, semver version and branch are the same")
+    return 0
 
 
 if __name__ == "__main__":
