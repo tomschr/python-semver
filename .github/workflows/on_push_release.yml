@@ -10,7 +10,7 @@ on:
 jobs:
   verify-release:
     runs-on: ubuntu-latest
-
+    if: contains(github.ref, 'release/')
     steps:
       - uses: actions/checkout@v1
 
@@ -31,6 +31,8 @@ jobs:
 
   prepare-release:
     needs: verify-release
+    # if: github.event.action == 'closed' && \
+    #   github.event.pull_request.merged == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -53,6 +55,8 @@ jobs:
            cat $GITHUB_EVENT_PATH
            echo "\n"
            echo "::debug::---end"
+           echo "github.event.action=${{ github.event.action }}"
+           echo "github.event.pull_request=${{ github.event.pull_request }}"
 
       - name: Set up Python 3.7
         id: setup-py37
