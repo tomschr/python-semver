@@ -1,0 +1,99 @@
+---
+name: Preparing Release
+
+on:
+  push:
+  pull_request:
+    branches:
+      - 'release/*'
+
+jobs:
+  verify-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python 3.7
+        id: setup-py37
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Verify release branch with semver version
+        run: |
+          python3 .github/workflows/verify-version.py
+
+#      - name: Check Changelog
+#        run: |
+#          python3 .github/workflows/verify-changelog.py
+
+
+  prepare-release:
+    needs: verify-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Output env variables
+        run: |
+           echo "GITHUB_WORKFLOW=${GITHUB_WORKFLOW}"
+           echo "GITHUB_ACTION=$GITHUB_ACTION"
+           echo "GITHUB_ACTIONS=$GITHUB_ACTIONS"
+           echo "GITHUB_ACTOR=$GITHUB_ACTOR"
+           echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
+           echo "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
+           echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
+           echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+           echo "GITHUB_SHA=$GITHUB_SHA"
+           echo "GITHUB_REF=$GITHUB_REF"
+           echo "GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
+           echo "GITHUB_BASE_REF=$GITHUB_BASE_REF"
+           echo "::debug::---Start content of file $GITHUB_EVENT_PATH"
+           cat $GITHUB_EVENT_PATH
+           echo "\n"
+           echo "::debug::---end"
+
+      - name: Set up Python 3.7
+        id: setup-py37
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Install wheel & twine
+        id: install-wheel
+        run: python3 -m pip install --upgrade pip wheel twine
+
+      - name: Build wheel
+        id: wheel
+        if: success()
+        run: python3 setup.py bdist_wheel
+
+      - name: Build sdist
+        id: sdist
+        if: success()
+        run: python3 setup.py sdist
+
+      - name: Create artifact
+        uses: actions/upload-artifact@v1
+        if: success()
+        with:
+          # when you change the name, sync it in
+          # other Actions too
+          name: save-wheel-and-sdist
+          path: dist/
+
+      - name: Upload to TestPyPI
+        # This step requires the secrets.test_pypi_password
+        if: success()
+        run: |
+          if [[ -z "${{ secrets.test_pypi_password }}" ]]; then
+             echo "::error::Missing secrets.test_pypi_password variable."
+             echo "::error::Go to your repository settings > Secrets "
+             echo "::error::and add a new encrypted variable"
+             echo "::error::see https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/"
+             exit 1
+          fi
+          twine upload --skip-existing \
+              --repository-url https://test.pypi.org/legacy/ \
+              -u __token__ -p "${{ secrets.test_pypi_password }}" dist/*
