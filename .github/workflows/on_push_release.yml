@@ -96,4 +96,5 @@ jobs:
           fi
           twine upload --skip-existing \
               --repository-url https://test.pypi.org/legacy/ \
-              -u __token__ -p "${{ secrets.test_pypi_password }}" dist/*
+              -u __token__ -p "${{ secrets.TESTPYPI_SEMVER_UPLOAD_TOKEN }}" dist/*
+
