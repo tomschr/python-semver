@@ -291,6 +291,72 @@ class VersionInfo(object):
             string = string[: max(end - len(next_), start)] + next_ + string[end:]
         return string
 
+    def iter_versions(self, firstpart, *parts, prerelease_token="rc"):
+        """
+        Yields the next version
+
+        :param firstpart: a version part; valid
+        :param parts: a sequence with one or more version parts
+        :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+        :yields: a new version instance of :class:`semver.VersionInfo`
+
+        """
+        from itertools import chain
+
+        current_version = self
+        if isinstance(firstpart, str):
+            firstpart = [firstpart]
+        parts = chain(firstpart, parts)
+        for part in parts:
+            current_version = current_version.next_version(part, prerelease_token)
+            yield current_version
+
+    def next_version(self, part, prerelease_token="rc"):
+        """
+        Determines the next version, taking prereleases into account.
+
+        The "major", "minor", and "patch" raises the respective parts like
+        the ``bump_*`` functions. The real difference is using the
+        "preprelease" part. It gives you the next patch version of the prerelease,
+        for example:
+
+        >>> str(semver.VersionInfo.parse("0.1.4").next_version("prerelease"))
+        '0.1.5-rc.1'
+
+        :param part: One of "major", "minor", "patch", or "prerelease"
+        :param prerelease_token: prefix string of prerelease, defaults to 'rc'
+        :return: a new VersionInfo instance
+        """
+        validparts = {
+            "major",
+            "minor",
+            "patch",
+            "prerelease",
+            # "build", # ???
+        }
+        cls = type(self)
+        if part not in validparts:
+            raise ValueError(
+                "Invalid part. Expected one of {validparts}, but got {part!r}".format(
+                    validparts=validparts, part=part
+                )
+            )
+        if (self.prerelease or self.build) and (
+            part == "patch"
+            or (part == "minor" and self.patch == 0)
+            or (part == "major" and self.minor == self.patch == 0)
+        ):
+            newver = cls(*self._asdict())
+            return newver.replace(prerelease=None, build=None)
+
+        if part in ("major", "minor", "patch"):
+            return getattr(self, "bump_" + part)()
+
+        version = self
+        if not self.prerelease:
+            version = self.bump_patch()
+        return version.bump_prerelease(prerelease_token)
+
     def bump_major(self):
         """
         Raise the major part of the version, return a new object but leave self
