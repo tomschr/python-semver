@@ -1,3 +1,19 @@
+[tool.poetry]
+name = "semver"
+version = "2.9.1"
+description = "Semantic version in Python"
+authors = ["Kostiantyn Rybnikov <k-bx@k-bx.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+black = {version = "^19.10b0", python = "3.6"}
+
+[tool.poetry.dev-dependencies]
+tox = "^3.14.6"
+black = "^19.10b0"
+pytest = "^5.4.1"
+pytest-cov = "^2.8.1"
+
 [tool.black]
 line-length = 88
 target-version = ['py37']
@@ -18,3 +34,8 @@ exclude = '''
   )/
 )
 '''
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
