@@ -27,24 +27,6 @@ from semver import (
     replace,
 )
 
-SEMVERFUNCS = [
-    compare,
-    createparser,
-    bump_build,
-    bump_major,
-    bump_minor,
-    bump_patch,
-    bump_prerelease,
-    finalize_version,
-    format_version,
-    match,
-    max_ver,
-    min_ver,
-    parse,
-    process,
-    replace,
-]
-
 
 @contextmanager
 def does_not_raise(item):
@@ -63,13 +45,6 @@ def version():
     return VersionInfo(
         major=1, minor=2, patch=3, prerelease="alpha.1.2", build="build.11.e0f985a"
     )
-
-
-@pytest.mark.parametrize(
-    "func", SEMVERFUNCS, ids=[func.__name__ for func in SEMVERFUNCS]
-)
-def test_fordocstrings(func):
-    assert func.__doc__, "Need a docstring for function %r" % func.__name
 
 
 @pytest.mark.parametrize(

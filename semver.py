@@ -23,7 +23,7 @@ SEMVER_SPEC_VERSION = "2.0.0"
 
 if not hasattr(__builtins__, "cmp"):
 
-    def cmp(a, b):
+    def cmp(a, b):  # doctest: off
         """Return negative if a<b, zero if a==b, positive if a>b."""
         return (a > b) - (a < b)
 
@@ -108,7 +108,10 @@ def parse(version):
 
 
 def comparator(operator):
-    """Wrap a VersionInfo binary op method in a type-check."""
+    """Wrap a VersionInfo binary op method in a type-check.
+
+    :param operator: the function operator to decorate
+    """
 
     @wraps(operator)
     def wrapper(self, other):
@@ -720,7 +723,7 @@ def bump_major(version):
     .. deprecated:: 2.10.0
        Use :func:`semver.VersionInfo.bump_major` instead.
 
-    :param: version string
+    :param version: a version string
     :return: the raised version string
     :rtype: str
 
@@ -738,7 +741,7 @@ def bump_minor(version):
     .. deprecated:: 2.10.0
        Use :func:`semver.VersionInfo.bump_minor` instead.
 
-    :param: version string
+    :param version: a version string
     :return: the raised version string
     :rtype: str
 
@@ -756,7 +759,7 @@ def bump_patch(version):
     .. deprecated:: 2.10.0
        Use :func:`semver.VersionInfo.bump_patch` instead.
 
-    :param: version string
+    :param version: a version string
     :return: the raised version string
     :rtype: str
 
@@ -957,8 +960,6 @@ def process(args):
 
     :param args: The parsed arguments
     :type args: :class:`argparse.Namespace`
-    :param parser: the parser instance
-    :type parser: :class:`argparse.ArgumentParser`
     :return: result of the selected action
     :rtype: str
     """
