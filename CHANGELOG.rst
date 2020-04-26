@@ -7,7 +7,7 @@ All notable changes to this code base will be documented in this file,
 in every released version.
 
 Version 2.10.0 (WIP)
-===================
+====================
 
 :Released: 2020-xx-yy
 :Maintainer:
