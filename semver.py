@@ -121,7 +121,6 @@ def deprecated(func=None, replace=None, version=None, category=DeprecationWarnin
 
         f = func.__qualname__
         r = replace or f
-
         frame = inspect.currentframe().f_back
 
         msg = " ".join(msg)

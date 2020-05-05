@@ -121,6 +121,26 @@ Deprecations
 ----
 
 
+Version 3.0.0-dev1
+==================
+
+Features
+--------
+
+
+Bug Fixes
+---------
+
+
+Additions
+---------
+
+
+Removals
+--------
+
+
+
 Version 2.10.1
 ==============
 
@@ -137,6 +157,7 @@ Features
 * :pr:`256`: Made docstrings consistent
 
 
+
 Bug Fixes
 ---------
 
@@ -145,6 +166,7 @@ Bug Fixes
 
 
 ----
+
 
 
 Version 2.10.0
