@@ -9,6 +9,12 @@ VERSION_MATCH = re.compile(r"__version__ = ['\"]([^'\"]*)['\"]", re.M)
 
 
 def read_file(filename):
+    """
+    Read RST file and return content
+
+    :param filename: the RST file
+    :return: content of the RST file
+    """
     with open(join(dirname(__file__), filename)) as f:
         return f.read()
 
