@@ -121,8 +121,8 @@ Deprecations
 ----
 
 
-Version 3.0.0-dev1
-==================
+Version 3.0.0-dev.1
+===================
 
 Features
 --------
