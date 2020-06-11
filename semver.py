@@ -3,12 +3,28 @@ from __future__ import print_function
 
 import argparse
 import collections
-from functools import wraps, partial
 import inspect
 import re
 import sys
 import warnings
-
+from functools import wraps, partial
+from types import FrameType
+from typing import (
+    Callable,
+    TypeVar,
+    SupportsInt,
+    Protocol,
+    Optional,
+    Tuple,
+    Dict,
+    Union,
+    Generator,
+    cast,
+    Iterable,
+    List,
+    Iterator,
+    Collection,
+)
 
 __version__ = "3.0.0-alpha0"
 __author__ = "Kostiantyn Rybnikov"
@@ -50,6 +66,22 @@ __all__ = (
     "VersionInfo",
 )
 
+from types import FrameType
+
+from typing import (
+    Callable,
+    TypeVar,
+    SupportsInt,
+    Optional,
+    Tuple,
+    Dict,
+    Union,
+    Generator,
+    cast,
+    Iterable,
+    List,
+)
+
 #: Contains the implemented semver.org version of the spec
 SEMVER_SPEC_VERSION = "2.0.0"
 
@@ -62,7 +94,7 @@ def cmp(a, b):
 STRING_TYPES = (str, bytes)
 
 
-def ensure_str(s, encoding="utf-8", errors="strict"):
+def ensure_str(s: Union[str, bytes], encoding="utf-8", errors="strict") -> str:
     # Taken from six project
     """
     Coerce *s* to `str`.
@@ -84,18 +116,26 @@ def ensure_str(s, encoding="utf-8", errors="strict"):
     :return: the converted string
     :rtype: str
     """
-    if not isinstance(s, STRING_TYPES):
-        raise TypeError("not expecting type '%s'" % type(s))
-    elif isinstance(s, bytes):
+    if isinstance(s, bytes):
         s = s.decode(encoding, errors)
+    elif not isinstance(s, STRING_TYPES):
+        raise TypeError("not expecting type '%s'" % type(s))
     return s
 
 
-def deprecated(func=None, replace=None, version=None, category=DeprecationWarning):
+F = TypeVar("F", bound=Callable)
+
+
+def deprecated(
+    func: F = None,
+    replace: str = None,
+    version: str = None,
+    category=DeprecationWarning,
+) -> Union[Callable[..., F], partial]:
     """
     Decorates a function to output a deprecation warning.
 
-    :param func: the function to decorate (or None)
+    :param func: the function to decorate
     :param str replace: the function to replace (use the full qualified
         name like ``semver.VersionInfo.bump_major``.
     :param str version: the first version when this function was deprecated.
@@ -108,22 +148,23 @@ def deprecated(func=None, replace=None, version=None, category=DeprecationWarnin
         return partial(deprecated, replace=replace, version=version, category=category)
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
-        msg = ["Function '{m}.{f}' is deprecated."]
+    def wrapper(*args, **kwargs) -> Callable[..., F]:
+        msg_list = ["Function '{m}.{f}' is deprecated."]
 
         if version:
-            msg.append("Deprecated since version {v}. ")
-        msg.append("This function will be removed in semver 3.")
+            msg_list.append("Deprecated since version {v}. ")
+        msg_list.append("This function will be removed in semver 3.")
         if replace:
-            msg.append("Use {r!r} instead.")
+            msg_list.append("Use {r!r} instead.")
         else:
-            msg.append("Use the respective 'semver.VersionInfo.{r}' instead.")
+            msg_list.append("Use the respective 'semver.VersionInfo.{r}' instead.")
 
-        f = func.__qualname__
+        f = cast(F, func).__qualname__
         r = replace or f
-        frame = inspect.currentframe().f_back
 
-        msg = " ".join(msg)
+        frame = cast(FrameType, cast(FrameType, inspect.currentframe()).f_back)
+
+        msg = " ".join(msg_list)
         warnings.warn_explicit(
             msg.format(m=func.__module__, f=f, r=r, v=version),
             category=category,
@@ -134,7 +175,7 @@ def deprecated(func=None, replace=None, version=None, category=DeprecationWarnin
         # https://docs.python.org/3/library/inspect.html#the-interpreter-stack
         # better remove the interpreter stack:
         del frame
-        return func(*args, **kwargs)
+        return func(*args, **kwargs)  # type: ignore
 
     return wrapper
 
@@ -168,11 +209,16 @@ def parse(version):
     return VersionInfo.parse(version).to_dict()
 
 
-def comparator(operator):
+VersionPart = Union[int, Optional[str]]
+Comparable = Union["VersionInfo", Dict[str, VersionPart], Collection[VersionPart], str]
+Comparator = Callable[["VersionInfo", Comparable], bool]
+
+
+def comparator(operator: Comparator) -> Comparator:
     """Wrap a VersionInfo binary op method in a type-check."""
 
     @wraps(operator)
-    def wrapper(self, other):
+    def wrapper(self: "VersionInfo", other: Comparable) -> bool:
         comparable_types = (VersionInfo, dict, tuple, list, *STRING_TYPES)
         if not isinstance(other, comparable_types):
             raise TypeError(
@@ -183,7 +229,14 @@ def comparator(operator):
     return wrapper
 
 
-class VersionInfo(object):
+VersionTuple = Tuple[int, int, int, Optional[str], Optional[str]]
+
+VersionDict = Dict[str, VersionPart]
+
+VersionIterator = Iterator[VersionPart]
+
+
+class VersionInfo:
     """
     A semver compatible version class.
 
@@ -220,9 +273,16 @@ class VersionInfo(object):
         re.VERBOSE,
     )
 
-    def __init__(self, major, minor=0, patch=0, prerelease=None, build=None):
+    def __init__(
+        self,
+        major: SupportsInt,
+        minor: SupportsInt = 0,
+        patch: SupportsInt = 0,
+        prerelease: Union[str, int] = None,
+        build: Union[str, int] = None,
+    ):
         # Build a dictionary of the arguments except prerelease and build
-        version_parts = {"major": major, "minor": minor, "patch": patch}
+        version_parts = {"major": int(major), "minor": int(minor), "patch": int(patch)}
 
         for name, value in version_parts.items():
             value = int(value)
@@ -239,7 +299,7 @@ class VersionInfo(object):
         self._build = None if build is None else str(build)
 
     @property
-    def major(self):
+    def major(self) -> int:
         """The major part of a version (read-only)."""
         return self._major
 
@@ -248,7 +308,7 @@ class VersionInfo(object):
         raise AttributeError("attribute 'major' is readonly")
 
     @property
-    def minor(self):
+    def minor(self) -> int:
         """The minor part of a version (read-only)."""
         return self._minor
 
@@ -257,7 +317,7 @@ class VersionInfo(object):
         raise AttributeError("attribute 'minor' is readonly")
 
     @property
-    def patch(self):
+    def patch(self) -> int:
         """The patch part of a version (read-only)."""
         return self._patch
 
@@ -266,7 +326,7 @@ class VersionInfo(object):
         raise AttributeError("attribute 'patch' is readonly")
 
     @property
-    def prerelease(self):
+    def prerelease(self) -> Optional[str]:
         """The prerelease part of a version (read-only)."""
         return self._prerelease
 
@@ -275,7 +335,7 @@ class VersionInfo(object):
         raise AttributeError("attribute 'prerelease' is readonly")
 
     @property
-    def build(self):
+    def build(self) -> Optional[str]:
         """The build part of a version (read-only)."""
         return self._build
 
@@ -283,7 +343,7 @@ class VersionInfo(object):
     def build(self, value):
         raise AttributeError("attribute 'build' is readonly")
 
-    def to_tuple(self):
+    def to_tuple(self) -> VersionTuple:
         """
         Convert the VersionInfo object to a tuple.
 
@@ -299,7 +359,7 @@ class VersionInfo(object):
         """
         return (self.major, self.minor, self.patch, self.prerelease, self.build)
 
-    def to_dict(self):
+    def to_dict(self) -> VersionDict:
         """
         Convert the VersionInfo object to an OrderedDict.
 
@@ -325,12 +385,12 @@ class VersionInfo(object):
             )
         )
 
-    def __iter__(self):
+    def __iter__(self) -> VersionIterator:
         """Implement iter(self)."""
         yield from self.to_tuple()
 
     @staticmethod
-    def _increment_string(string):
+    def _increment_string(string: str) -> str:
         """
         Look for the last sequence of number(s) in a string and increment.
 
@@ -347,7 +407,7 @@ class VersionInfo(object):
             string = string[: max(end - len(next_), start)] + next_ + string[end:]
         return string
 
-    def bump_major(self):
+    def bump_major(self) -> "VersionInfo":
         """
         Raise the major part of the version, return a new object but leave self
         untouched.
@@ -362,7 +422,7 @@ class VersionInfo(object):
         cls = type(self)
         return cls(self._major + 1)
 
-    def bump_minor(self):
+    def bump_minor(self) -> "VersionInfo":
         """
         Raise the minor part of the version, return a new object but leave self
         untouched.
@@ -377,7 +437,7 @@ class VersionInfo(object):
         cls = type(self)
         return cls(self._major, self._minor + 1)
 
-    def bump_patch(self):
+    def bump_patch(self) -> "VersionInfo":
         """
         Raise the patch part of the version, return a new object but leave self
         untouched.
@@ -392,7 +452,7 @@ class VersionInfo(object):
         cls = type(self)
         return cls(self._major, self._minor, self._patch + 1)
 
-    def bump_prerelease(self, token="rc"):
+    def bump_prerelease(self, token: str = "rc") -> "VersionInfo":
         """
         Raise the prerelease part of the version, return a new object but leave
         self untouched.
@@ -410,7 +470,7 @@ build=None)
         prerelease = cls._increment_string(self._prerelease or (token or "rc") + ".0")
         return cls(self._major, self._minor, self._patch, prerelease)
 
-    def bump_build(self, token="build"):
+    def bump_build(self, token: str = "build") -> "VersionInfo":
         """
         Raise the build part of the version, return a new object but leave self
         untouched.
@@ -428,7 +488,7 @@ build='build.10')
         build = cls._increment_string(self._build or (token or "build") + ".0")
         return cls(self._major, self._minor, self._patch, self._prerelease, build)
 
-    def compare(self, other):
+    def compare(self, other: Comparable) -> int:
         """
         Compare self with other.
 
@@ -478,7 +538,7 @@ build='build.10')
 
         return rccmp
 
-    def next_version(self, part, prerelease_token="rc"):
+    def next_version(self, part: str, prerelease_token: str = "rc") -> "VersionInfo":
         """
         Determines next version, preserving natural order.
 
@@ -527,30 +587,32 @@ build='build.10')
         return version.bump_prerelease(prerelease_token)
 
     @comparator
-    def __eq__(self, other):
+    def __eq__(self, other: Comparable) -> bool:  # type: ignore
         return self.compare(other) == 0
 
     @comparator
-    def __ne__(self, other):
+    def __ne__(self, other: Comparable) -> bool:  # type: ignore
         return self.compare(other) != 0
 
     @comparator
-    def __lt__(self, other):
+    def __lt__(self, other: Comparable) -> bool:
         return self.compare(other) < 0
 
     @comparator
-    def __le__(self, other):
+    def __le__(self, other: Comparable) -> bool:
         return self.compare(other) <= 0
 
     @comparator
-    def __gt__(self, other):
+    def __gt__(self, other: Comparable) -> bool:
         return self.compare(other) > 0
 
     @comparator
-    def __ge__(self, other):
+    def __ge__(self, other: Comparable) -> bool:
         return self.compare(other) >= 0
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[int, Optional[str], Tuple[Union[int, str], ...]]:
         """
         self.__getitem__(index) <==> self[index]
 
@@ -569,6 +631,7 @@ build='build.10')
         """
         if isinstance(index, int):
             index = slice(index, index + 1)
+        index = cast(slice, index)
 
         if (
             isinstance(index, slice)
@@ -577,19 +640,21 @@ build='build.10')
         ):
             raise IndexError("Version index cannot be negative")
 
-        part = tuple(filter(lambda p: p is not None, self.to_tuple()[index]))
+        part = tuple(
+            filter(lambda p: p is not None, cast(Iterable, self.to_tuple()[index]))
+        )
 
         if len(part) == 1:
-            part = part[0]
+            return part[0]
         elif not part:
             raise IndexError("Version part undefined")
         return part
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = ", ".join("%s=%r" % (key, val) for key, val in self.to_dict().items())
         return "%s(%s)" % (type(self).__name__, s)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """str(self)"""
         version = "%d.%d.%d" % (self.major, self.minor, self.patch)
         if self.prerelease:
@@ -598,10 +663,10 @@ build='build.10')
             version += "+%s" % self.build
         return version
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.to_tuple()[:4])
 
-    def finalize_version(self):
+    def finalize_version(self) -> "VersionInfo":
         """
         Remove any prerelease and build metadata from the version.
 
@@ -614,7 +679,7 @@ build='build.10')
         cls = type(self)
         return cls(self.major, self.minor, self.patch)
 
-    def match(self, match_expr):
+    def match(self, match_expr: str) -> bool:
         """
         Compare self to match a match expression.
 
@@ -662,7 +727,7 @@ build='build.10')
         return cmp_res in possibilities
 
     @classmethod
-    def parse(cls, version):
+    def parse(cls, version: Union[str, bytes]) -> "VersionInfo":
         """
         Parse version string to a VersionInfo instance.
 
@@ -679,19 +744,22 @@ build='build.10')
         VersionInfo(major=3, minor=4, patch=5, \
 prerelease='pre.2', build='build.4')
         """
-        match = cls._REGEX.match(ensure_str(version))
+        version_str = ensure_str(version)
+        match = cls._REGEX.match(version_str)
         if match is None:
-            raise ValueError("%s is not valid SemVer string" % version)
+            raise ValueError(f"{version_str} is not valid SemVer string")
 
-        version_parts = match.groupdict()
+        matched_version_parts = match.groupdict()
 
-        version_parts["major"] = int(version_parts["major"])
-        version_parts["minor"] = int(version_parts["minor"])
-        version_parts["patch"] = int(version_parts["patch"])
+        version_parts = {
+            "major": int(matched_version_parts["major"]),
+            "minor": int(matched_version_parts["minor"]),
+            "patch": int(matched_version_parts["patch"]),
+        }
 
         return cls(**version_parts)
 
-    def replace(self, **parts):
+    def replace(self, **parts: Union[int, Optional[str]]) -> "VersionInfo":
         """
         Replace one or more parts of a version and return a new
         :class:`VersionInfo` object, but leave self untouched
@@ -708,7 +776,7 @@ prerelease='pre.2', build='build.4')
         version = self.to_dict()
         version.update(parts)
         try:
-            return VersionInfo(**version)
+            return VersionInfo(**version)  # type: ignore
         except TypeError:
             unknownkeys = set(parts) - set(self.to_dict())
             error = "replace() got %d unexpected keyword " "argument(s): %s" % (
@@ -718,7 +786,7 @@ prerelease='pre.2', build='build.4')
             raise TypeError(error)
 
     @classmethod
-    def isvalid(cls, version):
+    def isvalid(cls, version: str) -> bool:
         """
         Check if the string is a valid semver version.
 
@@ -766,14 +834,14 @@ def parse_version_info(version):
     return VersionInfo.parse(version)
 
 
-def _nat_cmp(a, b):
-    def convert(text):
-        return int(text) if re.match("^[0-9]+$", text) else text
+def _nat_cmp(a: Optional[str], b: Optional[str]) -> int:
+    def convert(text: str) -> Union[int, str]:
+        return int(text) if re.match("^[0-9]+$", text) else text  # type: ignore
 
-    def split_key(key):
+    def split_key(key: str) -> List[Union[int, str]]:
         return [convert(c) for c in key.split(".")]
 
-    def cmp_prerelease_tag(a, b):
+    def cmp_prerelease_tag(a: Union[int, str], b: Union[int, str]) -> int:
         if isinstance(a, int) and isinstance(b, int):
             return cmp(a, b)
         elif isinstance(a, int):
@@ -1047,7 +1115,7 @@ def replace(version, **parts):
 
 
 # ---- CLI
-def cmd_bump(args):
+def cmd_bump(args: argparse.Namespace) -> str:
     """
     Subcommand: Bumps a version.
 
@@ -1072,11 +1140,11 @@ def cmd_bump(args):
 
     ver = VersionInfo.parse(args.version)
     # get the respective method and call it
-    func = getattr(ver, maptable[args.bump])
+    func = getattr(ver, maptable[cast(str, args.bump)])
     return str(func())
 
 
-def cmd_check(args):
+def cmd_check(args: argparse.Namespace) -> None:
     """
     Subcommand: Checks if a string is a valid semver version.
 
@@ -1090,7 +1158,7 @@ def cmd_check(args):
     raise ValueError("Invalid version %r" % args.version)
 
 
-def cmd_compare(args):
+def cmd_compare(args: argparse.Namespace) -> str:
     """
     Subcommand: Compare two versions
 
@@ -1102,7 +1170,7 @@ def cmd_compare(args):
     return str(compare(args.version1, args.version2))
 
 
-def cmd_nextver(args):
+def cmd_nextver(args: argparse.Namespace) -> str:
     """
     Subcommand: Determines the next version, taking prereleases into account.
 
@@ -1115,7 +1183,7 @@ def cmd_nextver(args):
     return str(version.next_version(args.part))
 
 
-def createparser():
+def createparser() -> argparse.ArgumentParser:
     """
     Create an :class:`argparse.ArgumentParser` instance.
 
@@ -1169,7 +1237,7 @@ def createparser():
     return parser
 
 
-def process(args):
+def process(args: argparse.Namespace) -> str:
     """
     Process the input from the CLI.
 
@@ -1188,7 +1256,7 @@ def process(args):
     return args.func(args)
 
 
-def main(cliargs=None):
+def main(cliargs: List[str] = None) -> int:
     """
     Entry point for the application script.
 

@@ -37,6 +37,10 @@ matrix:
     dist: bionic
     env: TOXENV=py310
 
+  - python: "3.8"
+    dist: xenial
+    env: TOXENV=mypy
+
 jobs:
   allow_failures:
     - python: "nightly"
