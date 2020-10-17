@@ -1,4 +1,4 @@
-"""Python helper for Semantic Versioning (http://semver.org/)"""
+"""Python helper for Semantic Versioning (http://semver.org)"""
 from __future__ import print_function
 
 import argparse
@@ -10,15 +10,12 @@ import sys
 import warnings
 
 
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-
-__version__ = "2.13.0"
+__version__ = "3.0.0-alpha0"
 __author__ = "Kostiantyn Rybnikov"
 __author_email__ = "k-bx@k-bx.com"
 __maintainer__ = ["Sebastien Celles", "Tom Schraitle"]
 __maintainer_email__ = "s.celles@gmail.com"
+__description__ = "Python helper for Semantic Versioning (http://semver.org)"
 
 #: Our public interface
 __all__ = (
@@ -57,36 +54,12 @@ __all__ = (
 SEMVER_SPEC_VERSION = "2.0.0"
 
 
-if not hasattr(__builtins__, "cmp"):
-
-    def cmp(a, b):
-        """Return negative if a<b, zero if a==b, positive if a>b."""
-        return (a > b) - (a < b)
+def cmp(a, b):
+    """Return negative if a<b, zero if a==b, positive if a>b."""
+    return (a > b) - (a < b)
 
 
-if PY3:  # pragma: no cover
-    string_types = str, bytes
-    text_type = str
-    binary_type = bytes
-
-    def b(s):
-        return s.encode("latin-1")
-
-    def u(s):
-        return s
-
-
-else:  # pragma: no cover
-    string_types = unicode, str
-    text_type = unicode
-    binary_type = str
-
-    def b(s):
-        return s
-
-    # Workaround for standalone backslash
-    def u(s):
-        return unicode(s.replace(r"\\", r"\\\\"), "unicode_escape")
+STRING_TYPES = (str, bytes)
 
 
 def ensure_str(s, encoding="utf-8", errors="strict"):
@@ -94,19 +67,26 @@ def ensure_str(s, encoding="utf-8", errors="strict"):
     """
     Coerce *s* to `str`.
 
-    For Python 2:
-      - `unicode` -> encoded to `str`
-      - `str` -> `str`
+    * `str` -> `str`
+    * `bytes` -> decoded to `str`
 
-    For Python 3:
-      - `str` -> `str`
-      - `bytes` -> decoded to `str`
+    :param s: the string to convert
+    :type s: str | bytes
+    :param encoding: the encoding to apply, defaults to "utf-8"
+    :type encoding: str
+    :param errors: set a different error handling scheme,
+       defaults to "strict".
+       Other possible values are `ignore`, `replace`, and
+       `xmlcharrefreplace` as well as any other name
+       registered with :func:`codecs.register_error`.
+    :type errors: str
+    :raises TypeError: if ``s`` is not str or bytes type
+    :return: the converted string
+    :rtype: str
     """
-    if not isinstance(s, (text_type, binary_type)):
+    if not isinstance(s, STRING_TYPES):
         raise TypeError("not expecting type '%s'" % type(s))
-    if PY2 and isinstance(s, text_type):
-        s = s.encode(encoding, errors)
-    elif PY3 and isinstance(s, binary_type):
+    elif isinstance(s, bytes):
         s = s.decode(encoding, errors)
     return s
 
@@ -139,8 +119,7 @@ def deprecated(func=None, replace=None, version=None, category=DeprecationWarnin
         else:
             msg.append("Use the respective 'semver.VersionInfo.{r}' instead.")
 
-        # hasattr is needed for Python2 compatibility:
-        f = func.__qualname__ if hasattr(func, "__qualname__") else func.__name__
+        f = func.__qualname__
         r = replace or f
 
         frame = inspect.currentframe().f_back
@@ -195,7 +174,7 @@ def comparator(operator):
 
     @wraps(operator)
     def wrapper(self, other):
-        comparable_types = (VersionInfo, dict, tuple, list, text_type, binary_type)
+        comparable_types = (VersionInfo, dict, tuple, list, *STRING_TYPES)
         if not isinstance(other, comparable_types):
             raise TypeError(
                 "other type %r must be in %r" % (type(other), comparable_types)
@@ -244,11 +223,7 @@ class VersionInfo(object):
 
     def __init__(self, major, minor=0, patch=0, prerelease=None, build=None):
         # Build a dictionary of the arguments except prerelease and build
-        version_parts = {
-            "major": major,
-            "minor": minor,
-            "patch": patch,
-        }
+        version_parts = {"major": major, "minor": minor, "patch": patch}
 
         for name, value in version_parts.items():
             value = int(value)
@@ -351,24 +326,9 @@ class VersionInfo(object):
             )
         )
 
-    # For compatibility reasons:
-    @deprecated(replace="semver.VersionInfo.to_tuple", version="2.10.0")
-    def _astuple(self):
-        return self.to_tuple()  # pragma: no cover
-
-    _astuple.__doc__ = to_tuple.__doc__
-
-    @deprecated(replace="semver.VersionInfo.to_dict", version="2.10.0")
-    def _asdict(self):
-        return self.to_dict()  # pragma: no cover
-
-    _asdict.__doc__ = to_dict.__doc__
-
     def __iter__(self):
         """Implement iter(self)."""
-        # As long as we support Py2.7, we can't use the "yield from" syntax
-        for v in self.to_tuple():
-            yield v
+        yield from self.to_tuple()
 
     @staticmethod
     def _increment_string(string):
@@ -473,8 +433,8 @@ build='build.10')
         """
         Compare self with other.
 
-        :param other: the second version (can be string, a dict, tuple/list, or
-             a VersionInfo instance)
+        :param other: the second version
+        :type: str | dict | tuple | list | :class:`VersionInfo`
         :return: The return value is negative if ver1 < ver2,
              zero if ver1 == ver2 and strictly positive if ver1 > ver2
         :rtype: int
@@ -489,7 +449,7 @@ build='build.10')
         0
         """
         cls = type(self)
-        if isinstance(other, string_types):
+        if isinstance(other, STRING_TYPES):
             other = cls.parse(other)
         elif isinstance(other, dict):
             other = cls(**other)
@@ -497,9 +457,8 @@ build='build.10')
             other = cls(*other)
         elif not isinstance(other, cls):
             raise TypeError(
-                "Expected str or {} instance, but got {}".format(
-                    cls.__name__, type(other)
-                )
+                f"Expected str, bytes, dict, tuple, list, or {cls.__name__} instance, "
+                f"but got {type(other)}"
             )
 
         v1 = self.to_tuple()[:3]
@@ -708,14 +667,14 @@ build='build.10')
         """
         Parse version string to a VersionInfo instance.
 
+        .. versionchanged:: 2.11.0
+           Changed method from static to classmethod to
+           allow subclasses.
+
         :param version: version string
         :return: a :class:`VersionInfo` instance
         :raises: :class:`ValueError`
         :rtype: :class:`VersionInfo`
-
-        .. versionchanged:: 2.11.0
-           Changed method from static to classmethod to
-           allow subclasses.
 
         >>> semver.VersionInfo.parse('3.4.5-pre.2+build.4')
         VersionInfo(major=3, minor=4, patch=5, \
@@ -895,7 +854,7 @@ def max_ver(ver1, ver2):
     >>> semver.max_ver("1.0.0", "2.0.0")
     '2.0.0'
     """
-    if isinstance(ver1, string_types):
+    if isinstance(ver1, STRING_TYPES):
         ver1 = VersionInfo.parse(ver1)
     elif not isinstance(ver1, VersionInfo):
         raise TypeError()
