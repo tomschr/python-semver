@@ -5,7 +5,6 @@ Semver |version| -- Semantic Versioning
 .. toctree::
    :maxdepth: 2
    :caption: Contents
-   :numbered:
 
    readme
    install
