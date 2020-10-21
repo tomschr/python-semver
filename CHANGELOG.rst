@@ -121,26 +121,6 @@ Deprecations
 ----
 
 
-Version 3.0.0-dev.1
-===================
-
-Features
---------
-
-
-Bug Fixes
----------
-
-
-Additions
----------
-
-
-Removals
---------
-
-
-
 Version 2.10.1
 ==============
 
