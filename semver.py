@@ -70,15 +70,22 @@ __all__ = (
 SEMVER_SPEC_VERSION = "2.0.0"
 
 
+# Types
+VersionPart = Union[int, Optional[str]]
+Comparable = Union["VersionInfo", Dict[str, VersionPart], Collection[VersionPart], str]
+Comparator = Callable[["VersionInfo", Comparable], bool]
+String = Union[str, bytes]
+VersionTuple = Tuple[int, int, int, Optional[str], Optional[str]]
+VersionDict = Dict[str, VersionPart]
+VersionIterator = Iterator[VersionPart]
+
+
 def cmp(a, b):
     """Return negative if a<b, zero if a==b, positive if a>b."""
     return (a > b) - (a < b)
 
 
-STRING_TYPES = (str, bytes)
-
-
-def ensure_str(s: Union[str, bytes], encoding="utf-8", errors="strict") -> str:
+def ensure_str(s: String, encoding="utf-8", errors="strict") -> str:
     # Taken from six project
     """
     Coerce *s* to `str`.
@@ -102,7 +109,7 @@ def ensure_str(s: Union[str, bytes], encoding="utf-8", errors="strict") -> str:
     """
     if isinstance(s, bytes):
         s = s.decode(encoding, errors)
-    elif not isinstance(s, STRING_TYPES):
+    elif not isinstance(s, String.__args__):  # type: ignore
         raise TypeError("not expecting type '%s'" % type(s))
     return s
 
@@ -193,17 +200,18 @@ def parse(version):
     return VersionInfo.parse(version).to_dict()
 
 
-VersionPart = Union[int, Optional[str]]
-Comparable = Union["VersionInfo", Dict[str, VersionPart], Collection[VersionPart], str]
-Comparator = Callable[["VersionInfo", Comparable], bool]
-
-
 def comparator(operator: Comparator) -> Comparator:
     """Wrap a VersionInfo binary op method in a type-check."""
 
     @wraps(operator)
     def wrapper(self: "VersionInfo", other: Comparable) -> bool:
-        comparable_types = (VersionInfo, dict, tuple, list, *STRING_TYPES)
+        comparable_types = (
+            VersionInfo,
+            dict,
+            tuple,
+            list,
+            *String.__args__,  # type: ignore
+        )
         if not isinstance(other, comparable_types):
             raise TypeError(
                 "other type %r must be in %r" % (type(other), comparable_types)
@@ -211,13 +219,6 @@ def comparator(operator: Comparator) -> Comparator:
         return operator(self, other)
 
     return wrapper
-
-
-VersionTuple = Tuple[int, int, int, Optional[str], Optional[str]]
-
-VersionDict = Dict[str, VersionPart]
-
-VersionIterator = Iterator[VersionPart]
 
 
 class VersionInfo:
@@ -262,15 +263,13 @@ class VersionInfo:
         major: SupportsInt,
         minor: SupportsInt = 0,
         patch: SupportsInt = 0,
-        prerelease: Union[str, int] = None,
-        build: Union[str, int] = None,
+        prerelease: Union[String, int] = None,
+        build: Union[String, int] = None,
     ):
         # Build a dictionary of the arguments except prerelease and build
         version_parts = {"major": int(major), "minor": int(minor), "patch": int(patch)}
 
         for name, value in version_parts.items():
-            value = int(value)
-            version_parts[name] = value
             if value < 0:
                 raise ValueError(
                     "{!r} is negative. A version can only be positive.".format(name)
@@ -492,7 +491,7 @@ build='build.10')
         0
         """
         cls = type(self)
-        if isinstance(other, STRING_TYPES):
+        if isinstance(other, String.__args__):  # type: ignore
             other = cls.parse(other)
         elif isinstance(other, dict):
             other = cls(**other)
@@ -711,7 +710,7 @@ build='build.10')
         return cmp_res in possibilities
 
     @classmethod
-    def parse(cls, version: Union[str, bytes]) -> "VersionInfo":
+    def parse(cls, version: String) -> "VersionInfo":
         """
         Parse version string to a VersionInfo instance.
 
@@ -899,7 +898,7 @@ def max_ver(ver1, ver2):
     >>> semver.max_ver("1.0.0", "2.0.0")
     '2.0.0'
     """
-    if isinstance(ver1, STRING_TYPES):
+    if isinstance(ver1, String.__args__):
         ver1 = VersionInfo.parse(ver1)
     elif not isinstance(ver1, VersionInfo):
         raise TypeError()
