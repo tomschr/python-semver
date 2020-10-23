@@ -21,7 +21,8 @@ from typing import (
     Iterable,
     List,
     Iterator,
-    Collection, Any,
+    Collection,
+    Any,
 )
 
 __version__ = "3.0.0-alpha0"
