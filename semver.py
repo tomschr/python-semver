@@ -732,17 +732,9 @@ prerelease='pre.2', build='build.4')
         if match is None:
             raise ValueError(f"{version_str} is not valid SemVer string")
 
-        matched_version_parts = match.groupdict()
+        matched_version_parts: Dict[str, Any] = match.groupdict()
 
-        version_parts: Dict[str, Any] = {  # FIXME: avoid using Any here by using a typeddict instead
-            "major": int(matched_version_parts["major"]),
-            "minor": int(matched_version_parts["minor"]),
-            "patch": int(matched_version_parts["patch"]),
-            "prerelease": matched_version_parts["prerelease"],
-            "build": matched_version_parts["build"],
-        }
-
-        return cls(**version_parts)
+        return cls(**matched_version_parts)
 
     def replace(self, **parts: Union[int, Optional[str]]) -> "VersionInfo":
         """
