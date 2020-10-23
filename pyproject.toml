@@ -23,6 +23,7 @@ exclude = '''
     | _build
     | build
     | dist
+    | contrib
   )/
 )
 '''
