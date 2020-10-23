@@ -13,17 +13,15 @@ from typing import (
     Callable,
     TypeVar,
     SupportsInt,
-    Protocol,
     Optional,
     Tuple,
     Dict,
     Union,
-    Generator,
     cast,
     Iterable,
     List,
     Iterator,
-    Collection,
+    Collection, Any,
 )
 
 __version__ = "3.0.0-alpha0"
@@ -66,21 +64,6 @@ __all__ = (
     "VersionInfo",
 )
 
-from types import FrameType
-
-from typing import (
-    Callable,
-    TypeVar,
-    SupportsInt,
-    Optional,
-    Tuple,
-    Dict,
-    Union,
-    Generator,
-    cast,
-    Iterable,
-    List,
-)
 
 #: Contains the implemented semver.org version of the spec
 SEMVER_SPEC_VERSION = "2.0.0"
@@ -751,10 +734,12 @@ prerelease='pre.2', build='build.4')
 
         matched_version_parts = match.groupdict()
 
-        version_parts = {
+        version_parts: Dict[str, Any] = {  # FIXME: avoid using Any here by using a typeddict instead
             "major": int(matched_version_parts["major"]),
             "minor": int(matched_version_parts["minor"]),
             "patch": int(matched_version_parts["patch"]),
+            "prerelease": matched_version_parts["prerelease"],
+            "build": matched_version_parts["build"],
         }
 
         return cls(**version_parts)
