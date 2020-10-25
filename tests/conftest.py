@@ -1,7 +1,6 @@
 import sys
 
 import pytest
-
 import semver
 
 sys.path.insert(0, "docs")

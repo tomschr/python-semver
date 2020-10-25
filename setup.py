@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# import semver as package
-from os.path import dirname, join
-from setuptools import setup
+from glob import glob
+from os.path import basename, dirname, join, splitext
+from setuptools import find_packages, setup
 import re
 
 
@@ -32,7 +32,7 @@ def find_meta(meta):
 
 
 NAME = "semver"
-META_FILE = read_file("semver.py")
+META_FILE = read_file("src/semver/__init__.py")
 
 
 # -----------------------------------------------------------------------------
@@ -51,7 +51,9 @@ setup(
         "Releases": "https://github.com/python-semver/python-semver/releases",
         "Bug Tracker": "https://github.com/python-semver/python-semver/issues",
     },
-    py_modules=[NAME],
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
     license="BSD",
     classifiers=[
@@ -70,6 +72,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.6.*",
-    tests_require=["tox", "virtualenv", "wheel"],
-    entry_points={"console_scripts": ["pysemver = semver:main"]},
+    tests_require=["tox", "virtualenv", "wheel", "pytest"],
+    entry_points={"console_scripts": ["pysemver = semver.cli:main"]},
 )
