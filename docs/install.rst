@@ -1,6 +1,8 @@
 Installing semver
 =================
 
+.. _release_policy:
+
 Release Policy
 --------------
 
