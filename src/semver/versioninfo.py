@@ -1,9 +1,12 @@
+#
+
 __all__ = (
     "VersionInfo",
+    "version",
 )
 
 import collections
-from functools import wraps
+from functools import singledispatch, wraps
 import re
 from typing import Any, Dict, Iterable, List, Optional, SupportsInt, Tuple, Union, cast
 from .utils import cmp, ensure_str
@@ -609,3 +612,32 @@ prerelease='pre.2', build='build.4')
             return True
         except ValueError:
             return False
+
+@singledispatch
+def version(major, minor=0, patch=0, prerelease=None, build=None) -> "VersionInfo":
+    """
+    General factory for :class:`VersionInfo`.
+
+
+    :param major: [description]
+    :param minor: [description], defaults to 0
+    :param patch: [description], defaults to 0
+    :param prerelease: [description], defaults to None
+    :param build: [description], defaults to None
+    :return: Version object
+    """
+    return VersionInfo(major, minor, patch, prerelease, build)
+
+
+@version.register(str)
+@version.register(bytes)
+def _(ver: str) -> "VersionInfo":
+    ver = ensure_str(ver)
+    if "." in ver:
+        return VersionInfo.parse(ver)
+    return VersionInfo(int(ver))
+
+
+@version.register(VersionInfo)
+def _(ver: "VersionInfo") -> "VersionInfo":
+    return ver
