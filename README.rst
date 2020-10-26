@@ -16,7 +16,7 @@ A Python module for `semantic versioning`_. Simplifies comparing versions.
    maintenance branch |MAINT|_.
 
    The last version of semver which supports Python 2.7 to 3.5 is
-   2.x.y Keep in mind, the major 2 release is frozen: no new
+   2.x.y Keep in mind, major 2 is frozen: no new
    features nor backports will be integrated.
 
    We recommend to upgrade your workflow to Python 3.x to gain support,
