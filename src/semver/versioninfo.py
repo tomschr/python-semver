@@ -613,17 +613,17 @@ prerelease='pre.2', build='build.4')
         except ValueError:
             return False
 
+
 @singledispatch
-def version(major, minor=0, patch=0, prerelease=None, build=None) -> "VersionInfo":
+def version(major:int, minor:int=0, patch:int=0, prerelease=None, build=None) -> "VersionInfo":
     """
-    General factory for :class:`VersionInfo`.
+    Generate a :class:`VersionInfo` instance from integers.
 
-
-    :param major: [description]
-    :param minor: [description], defaults to 0
-    :param patch: [description], defaults to 0
-    :param prerelease: [description], defaults to None
-    :param build: [description], defaults to None
+    :param major: the major part
+    :param minor: the minor part, defaults to 0
+    :param patch: the patch part, defaults to 0
+    :param prerelease: the prerelease part, defaults to None
+    :param build: the build part, defaults to None
     :return: Version object
     """
     return VersionInfo(major, minor, patch, prerelease, build)
@@ -632,6 +632,12 @@ def version(major, minor=0, patch=0, prerelease=None, build=None) -> "VersionInf
 @version.register(str)
 @version.register(bytes)
 def _(ver: str) -> "VersionInfo":
+    """
+    Create a VersionInfo instance from str/bytes.
+
+    :param ver: the version string
+    :return: a version object
+    """
     ver = ensure_str(ver)
     if "." in ver:
         return VersionInfo.parse(ver)
@@ -640,4 +646,5 @@ def _(ver: str) -> "VersionInfo":
 
 @version.register(VersionInfo)
 def _(ver: "VersionInfo") -> "VersionInfo":
+    """Hallo"""
     return ver

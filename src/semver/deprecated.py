@@ -9,6 +9,7 @@ __all__ = (
     "bump_minor",
     "bump_patch",
     "bump_prerelease",
+    "deprecated",
     "compare",
     "finalize_version",
     "format_version",

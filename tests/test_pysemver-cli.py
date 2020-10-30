@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from semver import cmd_bump, cmd_check, cmd_compare, cmd_nextver, createparser, main
+from semver.cli import cmd_bump, cmd_check, cmd_compare, cmd_nextver, createparser, main
 
 
 @contextmanager
