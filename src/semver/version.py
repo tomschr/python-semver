@@ -16,13 +16,7 @@ from typing import (
     Collection,
 )
 
-from ._types import (
-    VersionTuple,
-    VersionDict,
-    VersionIterator,
-    String,
-    VersionPart,
-)
+from ._types import VersionTuple, VersionDict, VersionIterator, String, VersionPart
 
 # These types are required here because of circular imports
 Comparable = Union["Version", Dict[str, VersionPart], Collection[VersionPart], str]
@@ -51,6 +45,28 @@ def _comparator(operator: Comparator) -> Comparator:
 def _cmp(a, b):  # TODO: type hints
     """Return negative if a<b, zero if a==b, positive if a>b."""
     return (a > b) - (a < b)
+
+
+def typed_property(name: str):
+    """
+    Create properties.
+
+    :param name: The name of the property
+    :raises AttributeError: as the property is read-only,
+        raised when a property is going to be set.
+    :return: the property
+    """
+    storage_name = f"_{name}"
+
+    def fget(self):
+        return getattr(self, storage_name)
+
+    def fset(self, value):
+        raise AttributeError(f"attribute {name!r} is readonly")
+
+    return property(
+        fget=fget, fset=fset, doc=f"""The {name} part of a version (read-only)."""
+    )
 
 
 class Version:
@@ -89,6 +105,11 @@ class Version:
         """,
         re.VERBOSE,
     )
+    major = typed_property("major")  # int
+    minor = typed_property("minor")  # int
+    patch = typed_property("patch")  # int
+    prerelease = typed_property("prerelease")  # Optional[str]
+    build = typed_property("build")  # Optional[str]
 
     def __init__(
         self,
@@ -136,51 +157,6 @@ class Version:
         else:
             return _cmp(len(a), len(b))
 
-    @property
-    def major(self) -> int:
-        """The major part of a version (read-only)."""
-        return self._major
-
-    @major.setter
-    def major(self, value):
-        raise AttributeError("attribute 'major' is readonly")
-
-    @property
-    def minor(self) -> int:
-        """The minor part of a version (read-only)."""
-        return self._minor
-
-    @minor.setter
-    def minor(self, value):
-        raise AttributeError("attribute 'minor' is readonly")
-
-    @property
-    def patch(self) -> int:
-        """The patch part of a version (read-only)."""
-        return self._patch
-
-    @patch.setter
-    def patch(self, value):
-        raise AttributeError("attribute 'patch' is readonly")
-
-    @property
-    def prerelease(self) -> Optional[str]:
-        """The prerelease part of a version (read-only)."""
-        return self._prerelease
-
-    @prerelease.setter
-    def prerelease(self, value):
-        raise AttributeError("attribute 'prerelease' is readonly")
-
-    @property
-    def build(self) -> Optional[str]:
-        """The build part of a version (read-only)."""
-        return self._build
-
-    @build.setter
-    def build(self, value):
-        raise AttributeError("attribute 'build' is readonly")
-
     def to_tuple(self) -> VersionTuple:
         """
         Convert the Version object to a tuple.
@@ -208,8 +184,7 @@ class Version:
           ``patch``, ``prerelease``, and ``build``.
 
         >>> semver.Version(3, 2, 1).to_dict()
-        OrderedDict([('major', 3), ('minor', 2), ('patch', 1), \
-('prerelease', None), ('build', None)])
+        OrderedDict([('major', 3), ('minor', 2), ('patch', 1), ('prerelease', None), ('build', None)])
         """
         return collections.OrderedDict(
             (
@@ -296,8 +271,7 @@ class Version:
 
         >>> ver = semver.parse("3.4.5")
         >>> ver.bump_prerelease()
-        Version(major=3, minor=4, patch=5, prerelease='rc.2', \
-build=None)
+        Version(major=3, minor=4, patch=5, prerelease='rc.2', build=None)
         """
         cls = type(self)
         prerelease = cls._increment_string(self._prerelease or (token or "rc") + ".0")
@@ -313,8 +287,7 @@ build=None)
 
         >>> ver = semver.parse("3.4.5-rc.1+build.9")
         >>> ver.bump_build()
-        Version(major=3, minor=4, patch=5, prerelease='rc.1', \
-build='build.10')
+        Version(major=3, minor=4, patch=5, prerelease='rc.1', build='build.10')
         """
         cls = type(self)
         build = cls._increment_string(self._build or (token or "build") + ".0")
@@ -357,7 +330,7 @@ build='build.10')
             return x
 
         rc1, rc2 = self.prerelease, other.prerelease
-        rccmp = self._nat_cmp(rc1, rc2)
+        rccmp = cls._nat_cmp(rc1, rc2)
 
         if not rccmp:
             return 0
@@ -567,8 +540,7 @@ build='build.10')
         :raises TypeError: if version contains the wrong type
 
         >>> semver.Version.parse('3.4.5-pre.2+build.4')
-        Version(major=3, minor=4, patch=5, \
-prerelease='pre.2', build='build.4')
+        Version(major=3, minor=4, patch=5, prerelease='pre.2', build='build.4')
         """
         if isinstance(version, bytes):
             version = version.decode("UTF-8")
