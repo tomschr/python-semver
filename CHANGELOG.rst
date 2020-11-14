@@ -1,10 +1,13 @@
-##########
 Change Log
 ##########
 
 Changes for the upcoming release can be found in
 the `"changelog.d" directory <https://github.com/python-semver/python-semver/tree/master/changelog.d>`_
 in our repository.
+
+.. contents:: Page contents
+   :local:
+   :depth: 1
 
 ..
    Do *NOT* add changelog entries here!

@@ -5,6 +5,10 @@ API Reference
 
 .. currentmodule:: semver
 
+.. contents:: Page contents
+   :local:
+   :depth: 2
+
 
 Metadata :mod:`semver.__about__`
 --------------------------------

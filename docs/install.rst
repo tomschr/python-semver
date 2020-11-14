@@ -1,6 +1,10 @@
 Installing semver
 =================
 
+.. contents:: Page contents
+   :local:
+   :depth: 2
+
 Release Policy
 --------------
 
@@ -17,6 +21,11 @@ This line avoids surprises. You will get any updates within the major 2 release 
 
 Keep in mind, as this line avoids any major version updates, you also will never
 get new exciting features or bug fixes.
+
+Same applies for semver3, if you want to get all updates for the semver3
+development line, but not a major update to semver4::
+
+    semver>=3,<4
 
 You can add this line in your file :file:`setup.py`, :file:`requirements.txt`, or any other
 file that lists your dependencies.

@@ -1,6 +1,10 @@
 Using semver
 ============
 
+.. contents:: Page contents
+   :local:
+   :depth: 2
+
 The :mod:`semver` module can store a version in the :class:`~semver.version.Version` class.
 For historical reasons, a version can be also stored as a string or dictionary.
 

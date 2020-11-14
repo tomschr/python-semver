@@ -83,7 +83,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "python-semver"
-copyright = "2018, Kostiantyn Rybnikov and all"
+copyright = "2020, Kostiantyn Rybnikov and all"
 author = "Kostiantyn Rybnikov and all"
 
 # The version info for the project you're documenting, acts as replacement for
