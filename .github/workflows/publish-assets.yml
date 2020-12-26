@@ -1,0 +1,74 @@
+---
+name: Publish Assets (Wheel & Source Dist)
+
+on:
+  push_request:
+    branches: release/*
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Output env variables
+        run: |
+           echo "Default branch=${default-branch}"
+           echo "GITHUB_WORKFLOW=${GITHUB_WORKFLOW}"
+           echo "GITHUB_ACTION=$GITHUB_ACTION"
+           echo "GITHUB_ACTIONS=$GITHUB_ACTIONS"
+           echo "GITHUB_ACTOR=$GITHUB_ACTOR"
+           echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
+           echo "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
+           echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
+           echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+           echo "GITHUB_SHA=$GITHUB_SHA"
+           echo "GITHUB_REF=$GITHUB_REF"
+           echo "GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
+           echo "GITHUB_BASE_REF=$GITHUB_BASE_REF"
+           echo "::debug::---Start content of file $GITHUB_EVENT_PATH"
+           cat $GITHUB_EVENT_PATH
+           echo "\n"
+           echo "::debug::---end"
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+
+      - name: Upgrade pip
+        id: upgrade-pip
+        run: |
+          python3 -m pip install --upgrade pip
+
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          pip install tox tox-gh-actions wheel
+
+      - name: Build wheel/source dist
+        id: build-dist
+        run: |
+          tox -e prepare-dist
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: true
+      
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
+        with:
+          # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/
+          # asset_name: my-artifact.zip
+          # asset_content_type: application/zip
