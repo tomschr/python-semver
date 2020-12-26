@@ -27,6 +27,7 @@ jobs:
            echo "GITHUB_REF=$GITHUB_REF"
            echo "GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
            echo "GITHUB_BASE_REF=$GITHUB_BASE_REF"
+           echo "CI_COMMIT_SLUG=$CI_COMMIT_SLUG"
            echo "github = ${{ github }}"
            echo "github.workspace = ${{ github.workspace }}"
            echo "::debug::---Start content of file $GITHUB_EVENT_PATH"
@@ -53,6 +54,21 @@ jobs:
         run: |
           tox -e prepare-dist
 
+      - name: Get tag name
+        id: tag
+        run: |
+          # we need to cut refs/tags/ or refs/head/ (two slashes)
+          # we can't use '${GITHUB_REF##*/}' so we do it stepwise
+          ref=${GITHUB_REF#*/}
+          ref=${ref#*/}
+          echo ::set-output name=tagname::${ref}
+
+      - name: Create Markdown file for body text
+        id: bodytext
+        run: |
+          git tag --list --format='%(contents)' ${{ steps.tag.outputs.tagname }} > body.md
+          echo "::set-output name=file::body.md"
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -61,12 +77,15 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
+          body_path: ${{ steps.bodytext.outputs.file }}
           draft: true
           prerelease: true
 
       - name: Get source distribution names
         id: sourcedist
         run: |
+           # We list whl and .tar.gz, .tar.bz2, tar.xz, and .zip files
+           # in case we change the output format
            W=$(ls dist/*.whl)
            echo "::set-output name=wheelname::${W#*/}"
            T=$(ls dist/*.{tar.{gz,bz2,xz},zip} 2>/dev/null || true)
