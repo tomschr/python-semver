@@ -2,8 +2,9 @@
 name: Publish Assets (Wheel & Source Dist)
 
 on:
-  pull_request:
-    branches: release/*
+  push:
+    tags:
+     - \d.\d.\d
 
 jobs:
   publish:
