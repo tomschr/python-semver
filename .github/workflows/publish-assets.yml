@@ -78,12 +78,12 @@ jobs:
            T=$(ls dist/*.{tar.{gz,bz2,xz},zip} 2>/dev/null || true)
            echo "::set-output name=tarname::${T#*/}"
 
-      - name: Create URL upload
-        id: uploadurl
-        run: |
-           TAG=$(python3 'import urllib.parse as p; print(p.quote_plus("${{ steps.tag.outputs.tagname }}"))')
-           URL=${{ github.repository.url }}/releases/tag/${TAG}/assets{?name,label}
-           echo "::set-output name=upload_url::$URL"
+      # - name: Create URL upload
+      #   id: uploadurl
+      #   run: |
+      #      TAG=$(python3 'import urllib.parse as p; print(p.quote_plus("${{ steps.tag.outputs.tagname }}"))')
+      #      URL=${{ github.repository.url }}/releases/tag/${TAG}/assets{?name,label}
+      #      echo "::set-output name=upload_url::$URL"
 
       - name: Upload Release
         uses: johnwbyrd/update-release@v1.0.0
