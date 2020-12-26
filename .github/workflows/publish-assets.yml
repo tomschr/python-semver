@@ -27,8 +27,7 @@ jobs:
            echo "GITHUB_REF=$GITHUB_REF"
            echo "GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
            echo "GITHUB_BASE_REF=$GITHUB_BASE_REF"
-           echo "CI_COMMIT_SLUG=$CI_COMMIT_SLUG"
-           echo "github = ${{ github }}"
+           echo "github.ref = ${{ github.ref }}
            echo "github.workspace = ${{ github.workspace }}"
            echo "::debug::---Start content of file $GITHUB_EVENT_PATH"
            cat $GITHUB_EVENT_PATH
@@ -66,20 +65,8 @@ jobs:
       - name: Create Markdown file for body text
         id: bodytext
         run: |
-          git tag --list --format='%(contents)' ${{ steps.tag.outputs.tagname }} > body.md
+          git tag --list --format='%(contents)' ${{ github.ref }} > body.md
           echo "::set-output name=file::body.md"
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body_path: ${{ steps.bodytext.outputs.file }}
-          draft: true
-          prerelease: true
 
       - name: Get source distribution names
         id: sourcedist
@@ -91,15 +78,46 @@ jobs:
            T=$(ls dist/*.{tar.{gz,bz2,xz},zip} 2>/dev/null || true)
            echo "::set-output name=tarname::${T#*/}"
 
-      - name: Upload Wheel Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create URL upload
+        id: uploadurl
+        run: |
+           TAG=$(python3 'import urllib.parse as p; print(p.quote_plus("${{ steps.tag.outputs.tagname }}"))')
+           URL=${{ github.repository.url }}/releases/tag/${TAG}/assets{?name,label}
+           echo "::set-output name=upload_url::$URL"
+
+      - name: Upload Release
+        uses: johnwbyrd/update-release@v1
         with:
-          # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info:
-          # https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/${{ steps.sourcedist.outputs.wheelname }}
-          asset_name: ${{ steps.sourcedist.outputs.wheelname }}
-          asset_content_type: application/zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: dist/${{ steps.sourcedist.outputs.wheelname }}
+          # release:
+          tag: ${{ steps.tag.outputs.tagname }}
+          message: Release ${{ github.ref }}
+          draft: true
+          prerelease: true
+          body: $(cat ${{ steps.bodytext.output.file }})
+
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: ${{ github.ref }}
+      #     release_name: Release ${{ github.ref }}
+      #     body_path: ${{ steps.bodytext.outputs.file }}
+      #     draft: true
+      #     prerelease: true    
+
+      # - name: Upload Wheel Asset
+      #   id: upload-release-asset
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info:
+      #     # https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: dist/${{ steps.sourcedist.outputs.wheelname }}
+      #     asset_name: ${{ steps.sourcedist.outputs.wheelname }}
+      #     asset_content_type: application/zip
