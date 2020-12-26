@@ -1,11 +1,7 @@
 ---
 name: Python
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
   check:
