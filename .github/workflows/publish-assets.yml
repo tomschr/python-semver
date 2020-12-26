@@ -67,6 +67,7 @@ jobs:
         run: |
           git tag --list --format='%(contents)' ${{ github.ref }} > body.md
           echo "::set-output name=file::body.md"
+          echo "::set-output name=body::$(cat body.md)"
 
       - name: Get source distribution names
         id: sourcedist
@@ -86,16 +87,16 @@ jobs:
       #      echo "::set-output name=upload_url::$URL"
 
       - name: Upload Release
-        uses: johnwbyrd/update-release@v1.0.0
+        uses: meeDamian/github-release@v2.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: dist/${{ steps.sourcedist.outputs.wheelname }}
-          # release:
           tag: ${{ steps.tag.outputs.tagname }}
-          message: Release ${{ github.ref }}
+          name: Release ${{ steps.tag.outputs.tagname }}
+          files: dist/${{ steps.sourcedist.outputs.wheelname }}
+          gzip: false
           draft: true
           prerelease: true
-          body: $(cat ${{ steps.bodytext.output.file }})
+          body: ${{ steps.bodytext.outputs.body }}
 
       # - name: Create Release
       #   id: create_release
