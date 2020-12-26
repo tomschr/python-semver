@@ -97,6 +97,7 @@ jobs:
           draft: true
           prerelease: true
           body: ${{ steps.bodytext.outputs.body }}
+          allowed_override: true
 
       # - name: Create Release
       #   id: create_release
