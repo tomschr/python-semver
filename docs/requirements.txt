@@ -2,4 +2,4 @@
 # Required in .readthedocs.yaml
 sphinx==7.0.1
 sphinx-argparse==0.4.0
-sphinx-autodoc-typehints==1.24.0
+sphinx-autodoc-typehints==1.25.0
