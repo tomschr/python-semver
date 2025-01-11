@@ -145,7 +145,7 @@ jobs:
           # https://github.com/python-semver/python-semver/settings/environments/5171753885/
           uv publish --index testpypi \
             --username ${{ vars.UV_PUBLISH_USERNAME }} \
-            --password ${{ secrets.UV_PUBLISH_TOKEN }}
+            --token ${{ secrets.UV_PUBLISH_TOKEN }}
 
   github_release:
     name: Create GitHub Release
